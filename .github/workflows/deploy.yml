@@ -1,0 +1,65 @@
+name: Deploy ZKLLVM
+
+on:
+  workflow_run:
+    workflows: ["Release Build CI"]
+    types:
+      - completed
+env:
+  GH_TOKEN: ${{ secrets.GNUS_TOKEN_1 }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # - name: Download Linux Build Artifacts
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     name: linux-build
+      #     path: ${{github.workspace}}/linux-build
+      
+      - name: Download Windows Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: windows-build
+          path: ${{github.workspace}}/windows-build
+
+      # - name: Download Android Build Artifacts
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     name: android-build
+      #     path: ${{github.workspace}}/android-build
+
+      # - name: Download OSX Build Artifacts
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     name: osx-build
+      #     path: ${{github.workspace}}/osx-build
+
+      # - name: Download iOS Build Artifacts
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     name: ios-build
+      #     path: ${{github.workspace}}/ios-build
+
+
+      - name: Compress Windows Build Artifacts
+        run: tar -czvf windows-build.tar.gz -C ${{github.workspace}}/windows-build .
+
+      # - name: Compress Linux Build Artifacts
+      #   run: tar -czvf linux-build.tar.gz -C ${{github.workspace}}/linux-build .
+
+      # - name: Compress Android Build Artifacts
+      #   run: tar -czvf android-build.tar.gz -C ${{github.workspace}}/android-build .
+
+      # - name: Compress MacOS Build Artifacts
+      #   run: tar -czvf osx-build.tar.gz -C ${{github.workspace}}/osx-build .
+
+      # - name: Compress iOS Build Artifacts
+      #   run: tar -czvf ios-build.tar.gz -C ${{github.workspace}}/ios-build .
+
+
+ #     - name: Deploy the compressed artifacts
+ #       run: |
+  
