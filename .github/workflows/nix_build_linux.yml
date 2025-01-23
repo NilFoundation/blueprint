@@ -129,11 +129,11 @@ jobs:
       always() && !cancelled() &&
       (needs.handle-syncwith.result == 'success' || needs.handle-syncwith.result == 'skipped') &&
       needs.build-and-test-with-nix.result == 'success'
-    uses: NilFoundation/proof-producer/.github/workflows/reusable-generate-proofs-linux.yml@f3e985dabe0d20ecb75375f86d8cf2a71e2eb58b
+    uses: NilFoundation/proof-producer/.github/workflows/reusable-generate-proofs-linux.yml@aee436f80619bcdee05a00289b8eb47b48d32c63
     with:
       artifact-name: ${{ needs.build-and-test-with-nix.outputs.examples-artifact-name }}
       # Update next line if you need new version of proof producer
-      proof-producer-ref: f3e985dabe0d20ecb75375f86d8cf2a71e2eb58b
+      proof-producer-ref: aee436f80619bcdee05a00289b8eb47b48d32c63
       refs: ${{ needs.handle-syncwith.outputs.prs-refs }}
       targets: ${{ needs.build-and-test-with-nix.outputs.prover-targets }}
 
