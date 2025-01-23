@@ -77,7 +77,7 @@ jobs:
           echo "examples=circuits-and-assignments" >> $GITHUB_OUTPUT
 
       - name: Upload examples' circuits and assignments artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: ${{ steps.artifact-names.outputs.examples }}
           path: |
@@ -85,7 +85,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload examples' circuits and assignments artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: ${{ steps.artifact-names.outputs.transpiler }}
           path: |
@@ -113,10 +113,10 @@ jobs:
       always() && !cancelled() &&
       (needs.handle-syncwith.result == 'success' || needs.handle-syncwith.result == 'skipped') &&
       needs.build-and-test-with-nix.result == 'success'
-    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@2a0ef5fc67e97be8e3c7b59338cf9eecd030c57d
+    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@c29ea8762856955c882e269a4550a741482c4a7f
     with:
       artifact-name: ${{ needs.build-and-test-with-nix.outputs.transpiler-artifact-name }}
-      evm-placeholder-verification-ref: 2a0ef5fc67e97be8e3c7b59338cf9eecd030c57d
+      evm-placeholder-verification-ref: c29ea8762856955c882e269a4550a741482c4a7f
       refs: ${{ needs.handle-syncwith.outputs.prs-refs }}
       test-names: ${{ needs.build-and-test-with-nix.outputs.evm-targets }}
 
@@ -129,11 +129,11 @@ jobs:
       always() && !cancelled() &&
       (needs.handle-syncwith.result == 'success' || needs.handle-syncwith.result == 'skipped') &&
       needs.build-and-test-with-nix.result == 'success'
-    uses: NilFoundation/proof-producer/.github/workflows/reusable-generate-proofs-linux.yml@f3e985dabe0d20ecb75375f86d8cf2a71e2eb58b
+    uses: NilFoundation/proof-producer/.github/workflows/reusable-generate-proofs-linux.yml@871ab857e9a66089078e419cc9b427b7e4c2cc64
     with:
       artifact-name: ${{ needs.build-and-test-with-nix.outputs.examples-artifact-name }}
       # Update next line if you need new version of proof producer
-      proof-producer-ref: f3e985dabe0d20ecb75375f86d8cf2a71e2eb58b
+      proof-producer-ref: 871ab857e9a66089078e419cc9b427b7e4c2cc64
       refs: ${{ needs.handle-syncwith.outputs.prs-refs }}
       targets: ${{ needs.build-and-test-with-nix.outputs.prover-targets }}
 
@@ -150,12 +150,12 @@ jobs:
       merged-artifact-name: ${{ steps.artifact-name.outputs.merged }}
     steps:
       - name: Download artifact with proofs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.8
         with:
           name: ${{ needs.generate-proofs.outputs.artifact-name }}
 
       - name: Download artifact with transpiler output
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.8
         with:
           name: ${{ needs.build-and-test-with-nix.outputs.transpiler-artifact-name }}
 
@@ -188,7 +188,7 @@ jobs:
           echo "merged=transpiler-output-merged-proofs" >> $GITHUB_OUTPUT
 
       - name: Upload merged artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: ${{ steps.artifact-name.outputs.merged }}
           path: |
@@ -205,10 +205,10 @@ jobs:
       (needs.handle-syncwith.result == 'success' || needs.handle-syncwith.result == 'skipped') &&
       needs.build-and-test-with-nix.result == 'success' &&
       needs.merge-proofs-to-transpiler-output.result == 'success'
-    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@2a0ef5fc67e97be8e3c7b59338cf9eecd030c57d
+    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@c29ea8762856955c882e269a4550a741482c4a7f
     with:
       artifact-name: ${{ needs.merge-proofs-to-transpiler-output.outputs.merged-artifact-name }}
-      evm-placeholder-verification-ref: 2a0ef5fc67e97be8e3c7b59338cf9eecd030c57d
+      evm-placeholder-verification-ref: c29ea8762856955c882e269a4550a741482c4a7f
       refs: ${{ needs.handle-syncwith.outputs.prs-refs }}
       test-names: ${{ needs.build-and-test-with-nix.outputs.evm-targets }}
 
