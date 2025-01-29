@@ -1,0 +1,136 @@
+name: Release Build CI - iOS Only
+on:
+  workflow_dispatch:
+
+jobs:        
+  iOS:
+    runs-on: macos-latest        
+    steps:
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v6
+
+      - name: Install GitHub CLI
+        run: |
+          brew install gh
+
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Define Release Tag
+        id: release-tag
+        run: echo "RELEASE_TAG=iOS-develop-Release" >> $GITHUB_ENV
+
+      - name: Download Prebuilt Boost from Thirdparty
+        shell: bash
+        run: |
+          gh release download \
+            --repo GeniusVentures/thirdparty \
+            iOS-develop-Release \
+            --pattern Boost-lib.tar.gz
+
+      - name: Ensure Directory Exists
+        run: |
+          mkdir -p ${{github.workspace}}/thirdparty/build/iOS/Release
+
+      - name: Extract Prebuilt Boost
+        run: |
+          tar -xzvf Boost-lib.tar.gz -C ${{github.workspace}}/thirdparty/build/iOS/Release     
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+        with:
+          path: 'zkLLVM'
+          submodules: "recursive"    
+
+      - name: Install Ninja
+        run: |
+          brew install ccache ninja
+          echo "CMAKE_GENERATOR=Ninja" >> $GITHUB_ENV  
+      
+      - name: Add iOS toolchain
+        run: |
+          rustup toolchain install nightly-aarch64-apple-darwin
+          rustup component add rust-src --toolchain nightly-aarch64-apple-darwin
+          rustup target add aarch64-apple-ios
+        
+      - name: Create Build Directory
+        run: cmake -E make_directory ${{github.workspace}}/zkLLVM/build/iOS/Release          
+
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}/zkLLVM/build/iOS/Release 
+        run: cmake -S .. -DCMAKE_BUILD_TYPE=Release -DPLATFORM=OS64 -DTHIRDPARTY_DIR=${{github.workspace}}/thirdparty/
+
+      - name: Compile
+        working-directory: ${{github.workspace}}/zkLLVM/build/iOS/Release 
+        run: cmake --build . -j --config Release
+      
+      - name: Install
+        working-directory: ${{github.workspace}}/zkLLVM/build/iOS/Release 
+        run: cmake --install .
+        
+      - name: Compressing Build Artifacts
+        working-directory: ${{github.workspace}}/zkLLVM
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          shopt -s extglob
+          rm -rf !(build) .[!.]* ..?*
+          cd build
+          rm -rf !(iOS) .[!.]* ..?*
+          cd iOS
+          rm -rf !(Release) .[!.]* ..?*
+          cd Release
+          rm -rf !(zkLLVM) .[!.]* ..?*
+          cd ${{github.workspace}}
+          tar --exclude='zkLLVM/build/iOS/Release/zkLLVM/src' \
+              --exclude='zkLLVM/build/iOS/Release/zkLLVM/tmp' \
+              --exclude='zkLLVM/build/iOS/Release/zkLLVM/Applications' \
+              -czvf zkLLVM.tar.gz zkLLVM/
+              
+      - name: Validate Artifact Size
+        run: |
+          if [ $(stat -c%s "zkLLVM.tar.gz") -ge $((2 * 1024 * 1024 * 1024)) ]; then
+            echo "Artifact exceeds 2GB limit! Exiting."
+            exit 1
+          fi
+
+      - name: Set Release Variables
+        id: vars
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          OS_NAME=iOS
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          BUILD_TYPE=Release
+          FILE_NAME="${OS_NAME}-${BRANCH_NAME}-${BUILD_TYPE}.tar.gz"
+          echo "RELEASE_TAG=${OS_NAME}-${BRANCH_NAME}-${BUILD_TYPE}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=${OS_NAME} ${BRANCH_NAME} ${BUILD_TYPE} (${GITHUB_SHA::7})" >> $GITHUB_ENV
+          echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
+
+      - name: Rename Artifact
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: mv zkLLVM.tar.gz ${{ env.FILE_NAME }}
+
+      - name: Create GitHub Release
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GNUS_TOKEN_1 }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          release_name: ${{ env.RELEASE_NAME }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GNUS_TOKEN_1 }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.FILE_NAME }}
+          asset_name: ${{ env.FILE_NAME }}
+          asset_content_type: application/gzip
+        
